@@ -5,6 +5,7 @@ import "github.com/jackc/pgx/v5/pgtype"
 type UserResponse struct {
 	ID           pgtype.UUID `json:"id" db:"ID"`
 	Username     pgtype.Text `json:"username" db:"Username"`
+	Email        pgtype.Text `json:"email" db:"Email"`
 	ProfileImage pgtype.Text `json:"profile_image" db:"Profile_Image"`
 }
 

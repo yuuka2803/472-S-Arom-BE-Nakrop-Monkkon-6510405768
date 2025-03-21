@@ -67,12 +67,13 @@ func (u *UserPGRepository) CreateUser(ctx context.Context, user *models.User) (*
 	user.ID = uuid.New()
 	err := u.db.QueryRowContext(
 		ctx,
-		`INSERT INTO users (id, username, password, profile_image) VALUES ($1, $2, $3, $4) RETURNING id, username, password, profile_image;`,
+		`INSERT INTO users (id, username, password, email, profile_image) VALUES ($1, $2, $3, $4, $5) RETURNING id, username, password, email, profile_image;`,
 		user.ID,
 		user.Username,
 		user.Password,
+		user.Email,
 		user.ProfileImage,
-	).Scan(&user.ID, &user.Username, &user.Password, &user.ProfileImage)
+	).Scan(&user.ID, &user.Username, &user.Password, &user.Email, &user.ProfileImage)
 
 	if err != nil {
 		// Log the UUID and error for debugging
@@ -88,9 +89,9 @@ func (u *UserPGRepository) GetUserByUsername(ctx context.Context, req *requests.
 	var user models.User
 	err := u.db.QueryRowContext(
 		ctx,
-		`SELECT id, username, password, profile_image FROM users WHERE username = $1`,
+		`SELECT id, username, password, email, profile_image FROM users WHERE username = $1`,
 		req.Username,
-	).Scan(&user.ID, &user.Username, &user.Password, &user.ProfileImage)
+	).Scan(&user.ID, &user.Username, &user.Password, &user.Email, &user.ProfileImage)
 	if err != nil {
 		return nil, err
 	}
