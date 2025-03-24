@@ -10,5 +10,7 @@ import (
 type UserRepositories interface {
 	CreateUser(ctx context.Context, user *models.User) (*models.User, error)
 	GetUserByUsername(ctx context.Context, req *requests.LoginRequest) (*models.User, error)
+	GetUserByUserID(ctx context.Context, req *requests.SendEmailRequest) (*models.User, error)
+	
 }
 

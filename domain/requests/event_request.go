@@ -7,7 +7,7 @@ type CreateEventRequest struct {
 	Description 	string    `json:"description" db:"Event_Description"`
 	Start       	string    `json:"start" db:"Event_Start"`
 	End         	string    `json:"end" db:"Event_End"`
-	Tag         	string    `json:"tag" db:"Event_Tag"`
+	Tag         	uuid.UUID    `json:"tag" db:"Event_Tag"`
 	Notification    bool      `json:"notification" db:"Event_Email"`
 	UserId      	uuid.UUID `json:"user_id" db:"User_Id"`
 }

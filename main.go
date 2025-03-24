@@ -64,21 +64,21 @@ func setupMiddleware(app *fiber.App) {
 func setupRoutes(app *fiber.App, db *sqlx.DB, cfg *configs.Config) {
 	// Repositories and Use Cases
 
+	// User Repo
+	userRepo := pg.NewUserPGRepository(db)
+	// Pass the entire cfg instead of just the JWT secret
+	userUsecase := usecases.ProvideUserService(userRepo, cfg)
+	userHandler := rest.NewUserHandler(userUsecase)
+
 	// Event Repo
 	eventRepo := pg.NewEventPGRepository(db)
-	eventService := usecases.ProvideEventService(eventRepo, cfg)
+	eventService := usecases.ProvideEventService(eventRepo, userRepo, cfg)
 	eventHandler := rest.NewEventHandler(eventService)
 
 	// Diary Repo
 	diaryRepo := pg.NewDiaryPGRepository(db)
 	diaryService := usecases.ProvideDiaryService(diaryRepo, cfg)
 	diaryHandler := rest.NewDiaryHandler(diaryService)
-
-	// User Repo
-	userRepo := pg.NewUserPGRepository(db)
-	// Pass the entire cfg instead of just the JWT secret
-	userUsecase := usecases.ProvideUserService(userRepo, cfg)
-	userHandler := rest.NewUserHandler(userUsecase)
 
 	
 

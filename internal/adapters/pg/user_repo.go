@@ -97,3 +97,18 @@ func (u *UserPGRepository) GetUserByUsername(ctx context.Context, req *requests.
 	}
 	return &user, nil
 }
+
+// Get User by UserID
+func (u *UserPGRepository) GetUserByUserID(ctx context.Context, req *requests.SendEmailRequest) (*models.User, error) {
+	var user models.User
+
+	err := u.db.QueryRowContext(
+		ctx,
+		`SELECT id, username, password, email, profile_image FROM users WHERE id = $1`,
+		req.ID,
+	).Scan(&user.ID, &user.Username, &user.Password, &user.Email, &user.ProfileImage)
+	if err != nil {
+		return nil, err
+	}
+	return &user, nil
+}
