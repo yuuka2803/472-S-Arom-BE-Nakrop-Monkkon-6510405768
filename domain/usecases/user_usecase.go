@@ -35,43 +35,43 @@ func (u *userService) Register(ctx context.Context, req *requests.RegisterReques
 	// Hash the password
 	hashedPassword, err := bcrypt.GenerateFromPassword([]byte(req.Password), bcrypt.DefaultCost)
 	if err != nil {
-			return nil, err
+		return nil, err
 	}
 
 	// Check if username already exists
 	loginReq := &requests.LoginRequest{Username: req.Username, Password: req.Password}
 	existingUser, _ := u.userRepo.GetUserByUsername(ctx, loginReq)
 	if existingUser != nil {
-			return nil, errors.New("username already exists")
+		return nil, errors.New("username already exists")
 	}
 
 	// Initialize image URL variable
 	var profileImageURL string
 	if file != nil {
-			// Upload image to Supabase
-			profileImageURL, err = pg.UploadImageToSupabase(file, fileName, u.config.SUPABASE_BUCKET, u.config)
-			if err != nil {
-					return nil, err
-			}
+		// Upload image to Supabase
+		profileImageURL, err = pg.UploadImageToSupabase(file, fileName, u.config.SUPABASE_BUCKET, u.config)
+		if err != nil {
+			return nil, err
+		}
 	}
 
 	// Create new user model
 	user := &models.User{
-			Username:     req.Username,
-			Password:     string(hashedPassword),
-			ProfileImage: profileImageURL,
+		Username:     req.Username,
+		Password:     string(hashedPassword),
+		ProfileImage: profileImageURL,
 	}
 
 	// Save user to repository
 	if _, err := u.userRepo.CreateUser(ctx, user); err != nil {
-			return nil, err
+		return nil, err
 	}
 
 	// Prepare response
 	return &responses.UserResponse{
-			ID:           pgtype.UUID{Bytes: [16]byte(user.ID)},
-			Username:     pgtype.Text{String: user.Username, Valid: true},
-			ProfileImage: pgtype.Text{String: profileImageURL, Valid: true},
+		ID:           pgtype.UUID{Bytes: [16]byte(user.ID)},
+		Username:     pgtype.Text{String: user.Username, Valid: true},
+		ProfileImage: pgtype.Text{String: profileImageURL, Valid: true},
 	}, nil
 }
 
@@ -100,10 +100,10 @@ func (u *userService) Login(ctx context.Context, req *requests.LoginRequest) (*r
 
 func (u *userService) generateJWT(userID, username, profileImage string) (string, error) {
 	claims := jwt.MapClaims{
-		"user_id":  userID,
-		"username": username,
+		"user_id":      userID,
+		"username":     username,
 		"ProfileImage": profileImage,
-		"exp": time.Now().Add(time.Hour * 24).Unix(),
+		"exp":          time.Now().Add(time.Hour * 24).Unix(),
 	}
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
 
