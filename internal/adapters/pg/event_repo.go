@@ -2,6 +2,8 @@ package pg
 
 import (
 	"context"
+	"time"
+	"fmt"
 
 	"github.com/jmoiron/sqlx"
 	"github.com/kritpi/arom-web-services/domain/models"
@@ -60,32 +62,63 @@ func NewEventPGRepository(db *sqlx.DB) repositories.EventRepositories {
 
 func (e *EventPGRepository) Create(ctx context.Context, req *requests.CreateEventRequest) (*models.Event, error) {
 	var event models.Event
-	err := e.db.QueryRowxContext(ctx, `INSERT INTO "EVENT" (
-	"Event_Title", 
-	"Event_Description", 
-	"Event_Start", 
-	"Event_End", 
-	"Event_Tag",
-	"Event_Email",
-	"User_Id"
-)
-VALUES ($1, $2, $3, $4, $5, $6, $7)
-RETURNING
-	"Event_Id",
-	"Event_Title",
-	"Event_Description",
-	"Event_Start",
-	"Event_End",
-	"Event_Type",
-	"Event_Complete",
-	"Event_Tag",
-	"Event_Email",
-	"User_Id";
 
-`,
-		req.Title, req.Description, req.Start, req.End, req.Tag, req.Notification,req.UserId).Scan(&event.Id, &event.Title, &event.Description, &event.Start, &event.End, &event.Tag,&event.Completed,&event.Type, &event.Notification, &event.UserId)
+	location, err := time.LoadLocation("Asia/Bangkok")
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("failed to load Bangkok timezone: %v", err)
 	}
+
+	// แปลงเวลาจาก string -> time.Time
+	startTimeLocal, err := time.ParseInLocation("2006-01-02T15:04:05Z", req.Start, location)
+	if err != nil {
+		return nil, fmt.Errorf("failed to parse start time: %v", err)
+	}
+
+	// แปลงเป็น UTC ก่อนเก็บ
+	startTimeUTC := startTimeLocal.UTC()
+
+	// แปลงเวลาสิ้นสุด
+	endTimeLocal, err := time.ParseInLocation("2006-01-02T15:04:05Z", req.End, location)
+	if err != nil {
+		return nil, fmt.Errorf("failed to parse end time: %v", err)
+	}
+
+	// แปลงเป็น UTC ก่อนเก็บ
+	endTimeUTC := endTimeLocal.UTC()
+
+	// Insert ลง Database
+	err = e.db.QueryRowxContext(ctx, `INSERT INTO "EVENT" (
+		"Event_Title", 
+		"Event_Description", 
+		"Event_Start", 
+		"Event_End", 
+		"Event_Tag",
+		"Event_Email",
+		"Event_Reminder",
+		"User_Id"
+	)
+	VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
+	RETURNING
+		"Event_Id",
+		"Event_Title",
+		"Event_Description",
+		"Event_Start",
+		"Event_End",
+		"Event_Type",
+		"Event_Complete",
+		"Event_Tag",
+		"Event_Email",
+		"Event_Reminder",
+		"User_Id"`,
+		req.Title, req.Description, startTimeUTC, endTimeUTC, req.Tag, req.Notification, req.ReminderAt, req.UserId,
+	).Scan(
+		&event.Id, &event.Title, &event.Description, &event.Start, &event.End,
+		&event.Tag, &event.Completed, &event.Type, &event.Notification, &event.ReminderAt, &event.UserId,
+	)
+	if err != nil {
+		return nil, fmt.Errorf("failed to insert event: %v", err)
+	}
+
 	return &event, nil
 }
+

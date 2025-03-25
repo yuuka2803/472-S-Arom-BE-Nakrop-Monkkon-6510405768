@@ -9,6 +9,7 @@ type CreateEventRequest struct {
 	End         	string    `json:"end" db:"Event_End"`
 	Tag         	uuid.UUID    `json:"tag" db:"Event_Tag"`
 	Notification    bool      `json:"notification" db:"Event_Email"`
+	ReminderAt        string    `json:"reminder" db:"Event_Reminder"`
 	UserId      	uuid.UUID `json:"user_id" db:"User_Id"`
 }
 

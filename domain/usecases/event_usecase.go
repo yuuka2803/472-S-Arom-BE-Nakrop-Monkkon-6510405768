@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"log"
+	"time"
 
 	"github.com/kritpi/arom-web-services/configs"
 	"github.com/kritpi/arom-web-services/domain/models"
@@ -45,6 +46,71 @@ func (e *eventService) SendEmail(to string, subject string, body string) error {
 	return nil
 }
 
+// SendReminderEmailBeforeEvent ใช้ส่งอีเมลก่อนเวลาเริ่ม Event
+func (e *eventService) SendReminderEmailBeforeEvent(event *models.Event, user *models.User, durationStr string) error {
+	// แปลง durationStr เป็น time.Duration
+	durationBeforeEvent, err := time.ParseDuration(durationStr)
+	if err != nil {
+		log.Printf("Error parsing duration: %v", err)
+		return err
+	}
+
+	// โหลดโซนเวลาของกรุงเทพฯ
+	location, err := time.LoadLocation("Asia/Bangkok")
+	if err != nil {
+		log.Fatalf("Error loading time location: %v", err)
+	}
+
+	// แปลง event.Start เป็นเวลาตามโซนที่ต้องการ
+	eventStartTime := event.Start.In(location)
+
+	// แปลงเวลาปัจจุบันให้เป็นโซนเวลาที่ต้องการ
+	currentTime := time.Now().In(location)
+
+	// หาช่วงเวลาที่ต้องการส่งก่อน Event
+	timeUntilEventStart := time.Until(eventStartTime) // คำนวณระยะเวลาจากเวลาปัจจุบันถึงเวลาของ Event
+	timeToWait := timeUntilEventStart - durationBeforeEvent
+
+	// ตั้งเวลาให้ส่งอีเมลตามระยะเวลาที่กำหนด
+	timer := time.NewTimer(timeToWait)
+
+	log.Printf("Reminder duration: %v, Time until event start: %v, Time to wait: %v", 
+		timeUntilEventStart, timeToWait, timeToWait)
+	log.Println("Current time:", currentTime)
+	log.Println("Event start time:", eventStartTime)
+
+	go func() {
+		<-timer.C // รอจนกว่าจะถึงเวลา
+		// ส่งอีเมล
+		subject := fmt.Sprintf("Reminder: %s", event.Title)
+
+		// จัดรูปแบบวันที่
+		startFormatted := event.Start.In(location).Format("2 Jan 2006, 15:04:05")
+		endFormatted := event.End.In(location).Format("2 Jan 2006, 15:04:05")
+
+		body := fmt.Sprintf(`
+			<html>
+			<head><title>Arom Event Reminder</title></head>
+			<body>
+				<h1>%s</h1>
+				<p>%s</p>
+				<p><strong>Event starts at:</strong> %s</p>
+				<p><strong>Event ends at:</strong> %s</p>
+			</body>
+			</html>
+		`, event.Title, event.Description, startFormatted, endFormatted)
+
+		// ส่งอีเมลไปยังผู้ใช้
+		err := e.SendEmail(user.Email, subject, body)
+		if err != nil {
+			log.Printf("Error sending reminder email: %v", err)
+		}
+	}()
+
+	return nil
+}
+
+
 // CreateEvent implements EventUseCase.
 func (e *eventService) CreateEvent(ctx context.Context, req *requests.CreateEventRequest) (*models.Event, error) {
 	// สร้าง Event
@@ -53,46 +119,54 @@ func (e *eventService) CreateEvent(ctx context.Context, req *requests.CreateEven
 		return nil, err
 	}
 
+	// ดึงข้อมูลผู้ใช้จาก UserRepository
+	user, err := e.userRepo.GetUserByUserID(ctx, &requests.SendEmailRequest{
+		ID: req.UserId, // ใช้ UserId เพื่อดึงข้อมูล
+	})
+	if err != nil {
+		return nil, err
+	}
+
 	// เช็คว่า Event_Email เป็น true หรือไม่
-	if event.Notification {
-		// ดึงข้อมูลผู้ใช้จาก UserRepository
-		user, err := e.userRepo.GetUserByUserID(ctx, &requests.SendEmailRequest{
-			ID: req.UserId, // ใช้ UserId เพื่อดึงข้อมูล
-		})
+	if event.Notification && user.Email != "" {
+		subject := fmt.Sprintf("Arom Notification: %s", event.Title)
+
+		// จัดรูปแบบวันที่
+		startFormatted := event.Start.Format("2 Jan 2006, 15:04:05")
+		endFormatted := event.End.Format("2 Jan 2006, 15:04:05")
+
+		body := fmt.Sprintf(`
+			<html>
+			<head><title>Arom Event Notification</title></head>
+			<body>
+				<h1>%s</h1>
+				<p>%s</p>
+				<p><strong>Event starts at:</strong> %s</p>
+				<p><strong>Event ends at:</strong> %s</p>
+			</body>
+			</html>
+		`, event.Title, event.Description, startFormatted, endFormatted)
+
+		// ส่งอีเมลไปยังผู้ใช้
+		err := e.SendEmail(user.Email, subject, body)
 		if err != nil {
 			return nil, err
 		}
+	}
 
-		// ตรวจสอบว่ามีอีเมลของผู้ใช้
-		if user.Email != "" {
-			subject := fmt.Sprintf("Arom Notification: %s", event.Title)
-
-			// จัดรูปแบบวันที่
-			startFormatted := event.Start.Format("2 Jan 2006, 15:04:05")
-			endFormatted := event.End.Format("2 Jan 2006, 15:04:05")
-
-			body := fmt.Sprintf(`
-				<html>
-				<head><title>Arom Event Notification</title></head>
-				<body>
-					<h1>%s</h1>
-					<p>%s</p>
-					<p><strong>Event starts at:</strong> %s</p>
-					<p><strong>Event ends at:</strong> %s</p>
-				</body>
-				</html>
-			`, event.Title, event.Description, startFormatted, endFormatted)
-
-			// ส่งอีเมลไปยังผู้ใช้
-			err := e.SendEmail(user.Email, subject, body)
-			if err != nil {
-				return nil, err
-			}
+	// ตรวจสอบว่า event.Reminder ไม่ใช่ "none"
+	if event.ReminderAt != "None" {
+		log.Println("Reminder function called with reminderAt:", event.ReminderAt)
+		// เรียกใช้ฟังก์ชัน SendReminderEmailBeforeEvent
+		err := e.SendReminderEmailBeforeEvent(event, user, event.ReminderAt)
+		if err != nil {
+			return nil, err
 		}
 	}
 
 	return event, nil
 }
+
 
 // GetByUserIDEvent implements EventUseCase.
 func (e *eventService) GetByUserIDEvent(ctx context.Context, id string) ([]*models.Event, error) {
