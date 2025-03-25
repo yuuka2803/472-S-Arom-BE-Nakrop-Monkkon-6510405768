@@ -13,6 +13,8 @@ type TagUseCase interface {
 	Create(ctx context.Context, req *requests.CreateTagRequest) (*models.Tag, error)
 	GetByID(ctx context.Context, id string) (*models.Tag, error)
 	GetByUserID(ctx context.Context, id string) ([]*models.Tag, error)
+	Delete(ctx context.Context, id string) error
+	Update(ctx context.Context, req *requests.UpdateTagRequest , id string)(error)
 }
 
 type tagService struct {
@@ -33,4 +35,12 @@ func (t *tagService) GetByID(ctx context.Context, id string) (*models.Tag, error
 // Create implements TagUseCase.	
 func (t *tagService) Create(ctx context.Context, req *requests.CreateTagRequest) (*models.Tag, error) {
 	return t.tagRepo.Create(ctx, req)
+}
+
+func (t *tagService) Delete(ctx context.Context, id string) error {
+	return t.tagRepo.Delete(ctx, id)
+}
+
+func (t *tagService) Update(ctx context.Context, req *requests.UpdateTagRequest, id string) error {
+	return t.tagRepo.Update(ctx, req, id)
 }

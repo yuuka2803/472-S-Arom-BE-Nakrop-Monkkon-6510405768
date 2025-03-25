@@ -51,3 +51,19 @@ func (t *TagPGRepository) GetByUserID(ctx context.Context, id string) ([]*models
 	}
 	return tags, nil
 }
+
+func (t *TagPGRepository) Delete(ctx context.Context, id string) error {
+	_, err := t.db.ExecContext(ctx, `DELETE FROM "TAG" WHERE "Tag_Id" = $1`, id)
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
+func (t *TagPGRepository) Update(ctx context.Context, req *requests.UpdateTagRequest, id string) error {
+	_, err := t.db.ExecContext(ctx, `UPDATE "TAG" SET "Tag_Name" = $1 WHERE "Tag_Id" = $2`, req.Completed, id)
+	if err != nil {
+		return err
+	}
+	return nil
+}

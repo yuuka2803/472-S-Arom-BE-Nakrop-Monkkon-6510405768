@@ -5,3 +5,7 @@ type CreateTagRequest struct{
 	UserID      string   `json:"user_id"`
 }
 
+type UpdateTagRequest struct {
+	Completed bool `json:"completed" db:"Tag_Complete"`
+}
+
