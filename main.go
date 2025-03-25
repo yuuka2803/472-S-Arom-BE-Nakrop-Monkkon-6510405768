@@ -80,6 +80,10 @@ func setupRoutes(app *fiber.App, db *sqlx.DB, cfg *configs.Config) {
 	userUsecase := usecases.ProvideUserService(userRepo, cfg)
 	userHandler := rest.NewUserHandler(userUsecase)
 
+	//Tag Repo
+	tagRepo := pg.NewTagPGRepository(db)
+	tagService := usecases.ProvideTagService(tagRepo, cfg)
+	tagHandler := rest.NewTagHandler(tagService)
 	
 
 	// Routes
@@ -102,6 +106,13 @@ func setupRoutes(app *fiber.App, db *sqlx.DB, cfg *configs.Config) {
 	app.Get(`/diary/:id`, diaryHandler.GetDiaryByID)
 	app.Get(`/diary/user/:userID`, diaryHandler.GetDiaryByUserID)
 	app.Patch(`/diary/:date`, diaryHandler.UpdateDiary)
+
+	// Tag Routes
+	app.Post(`/tag`, tagHandler.CreateTag)
+	app.Get(`/tag/:id`, tagHandler.GetByIDTag)
+	app.Get(`/tag/user/:id`, tagHandler.GetByUserIDTag)
+	app.Patch(`/tag/:id`, tagHandler.UpdateTag)
+	app.Delete(`/tag/:id`, tagHandler.DeleteTag)
 
 	// User Routes
 	app.Post("/user/register", userHandler.Register) //todo: Insert Successfully but there's error catched ["error": "sql: no rows in result set"]

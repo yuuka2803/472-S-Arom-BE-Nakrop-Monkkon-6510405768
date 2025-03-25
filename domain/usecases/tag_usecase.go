@@ -44,3 +44,10 @@ func (t *tagService) DeleteTag(ctx context.Context, id string) error {
 func (t *tagService) UpdateTag(ctx context.Context, req *requests.UpdateTagRequest, id string) error {
 	return t.tagRepo.Update(ctx, req, id)
 }
+
+func ProvideTagService(tagRepo repositories.TagRepositories, config *configs.Config) TagUseCase {
+	return &tagService{
+		tagRepo: tagRepo,
+		config:    config,
+	}
+}

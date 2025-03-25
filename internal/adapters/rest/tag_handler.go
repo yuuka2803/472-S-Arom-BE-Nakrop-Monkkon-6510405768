@@ -1,6 +1,8 @@
 package rest
 
 import (
+	"fmt"
+
 	"github.com/gofiber/fiber/v2"
 
 	"github.com/kritpi/arom-web-services/domain/requests"
@@ -64,7 +66,7 @@ func (p *tagHandler) UpdateTag(c *fiber.Ctx) error {
 	err := p.service.UpdateTag(c.Context(), &req, id)
 	if err != nil {
 		return c.Status(fiber.StatusNotFound).JSON(fiber.Map{
-			"message": "Tag not found",
+			"message": fmt.Sprintf("Tag with ID %s not found", id),
 		})
 	}
 	return c.Status(fiber.StatusOK).JSON(fiber.Map{
@@ -77,10 +79,16 @@ func (p *tagHandler) DeleteTag(c *fiber.Ctx) error {
 	err := p.service.DeleteTag(c.Context(), id)
 	if err != nil {
 		return c.Status(fiber.StatusNotFound).JSON(fiber.Map{
-			"message": "Tag not found",
+			"message": fmt.Sprintf("Tag with ID %s not found", id),
 		})
 	}
 	return c.Status(fiber.StatusOK).JSON(fiber.Map{
 		"message": "Tag deleted",
 	})
+}
+
+func NewTagHandler(service usecases.TagUseCase) TagHandler {
+	return &tagHandler{
+		service: service,
+	}
 }
