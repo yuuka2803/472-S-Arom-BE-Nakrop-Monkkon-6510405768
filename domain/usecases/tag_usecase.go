@@ -10,11 +10,11 @@ import (
 )
 
 type TagUseCase interface {
-	Create(ctx context.Context, req *requests.CreateTagRequest) (*models.Tag, error)
-	GetByID(ctx context.Context, id string) (*models.Tag, error)
-	GetByUserID(ctx context.Context, id string) ([]*models.Tag, error)
-	Delete(ctx context.Context, id string) error
-	Update(ctx context.Context, req *requests.UpdateTagRequest , id string)(error)
+	CreateTag(ctx context.Context, req *requests.CreateTagRequest) (*models.Tag, error)
+	GetByIDTag(ctx context.Context, id string) (*models.Tag, error)
+	GetByUserIDTag(ctx context.Context, id string) ([]*models.Tag, error)
+	DeleteTag(ctx context.Context, id string) error
+	UpdateTag(ctx context.Context, req *requests.UpdateTagRequest , id string)(error)
 }
 
 type tagService struct {
@@ -23,24 +23,24 @@ type tagService struct {
 }
 
 // GetByUserID implements TagUseCase.
-func (t *tagService) GetByUserID(ctx context.Context, id string) ([]*models.Tag, error) {
+func (t *tagService) GetByUserIDTag(ctx context.Context, id string) ([]*models.Tag, error) {
 	return t.tagRepo.GetByUserID(ctx, id)
 }
 
 // GetByID implements TagUseCase.	
-func (t *tagService) GetByID(ctx context.Context, id string) (*models.Tag, error) {
+func (t *tagService) GetByIDTag(ctx context.Context, id string) (*models.Tag, error) {
 	return t.tagRepo.GetByID(ctx, id)
 }
 
 // Create implements TagUseCase.	
-func (t *tagService) Create(ctx context.Context, req *requests.CreateTagRequest) (*models.Tag, error) {
+func (t *tagService) CreateTag(ctx context.Context, req *requests.CreateTagRequest) (*models.Tag, error) {
 	return t.tagRepo.Create(ctx, req)
 }
 
-func (t *tagService) Delete(ctx context.Context, id string) error {
+func (t *tagService) DeleteTag(ctx context.Context, id string) error {
 	return t.tagRepo.Delete(ctx, id)
 }
 
-func (t *tagService) Update(ctx context.Context, req *requests.UpdateTagRequest, id string) error {
+func (t *tagService) UpdateTag(ctx context.Context, req *requests.UpdateTagRequest, id string) error {
 	return t.tagRepo.Update(ctx, req, id)
 }
