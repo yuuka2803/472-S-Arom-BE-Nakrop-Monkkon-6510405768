@@ -44,13 +44,13 @@ func (e *EventPGRepository) Update(ctx context.Context, req *requests.UpdateEven
 	
 	err = e.db.QueryRowContext(ctx, `UPDATE "EVENT" 
 		SET "Event_Title" = $1, "Event_Start" = $2, "Event_End" = $3, 
-			"Event_Reminder" = $4, "Event_Description" = $5  
-		WHERE "Event_Id" = $6 
+			"Event_Reminder" = $4, "Event_Description" = $5, "Event_Tag" = $6
+		WHERE "Event_Id" = $7 
 		RETURNING 
 			"Event_Id", "Event_Title", "Event_Description", 
 			"Event_Start", "Event_End", "Event_Type", "Event_Complete", 
 			"Event_Tag", "Event_Email", "Event_Reminder", "User_Id"
-	`, req.Title, startTimeUTC, endTimeUTC, req.Reminder, req.Description, id).
+	`, req.Title, startTimeUTC, endTimeUTC, req.Reminder, req.Description,req.Tag, id).
 		Scan(
 			&event.Id, &event.Title, &event.Description, &event.Start, &event.End,
 			&event.Type, &event.Completed, &event.Tag, &event.Notification, &event.Reminder, &event.UserId,
