@@ -2,8 +2,8 @@ package pg
 
 import (
 	"context"
-	"time"
 	"fmt"
+	"time"
 
 	"github.com/jmoiron/sqlx"
 	"github.com/kritpi/arom-web-services/domain/models"
@@ -15,14 +15,63 @@ type EventPGRepository struct {
 	db *sqlx.DB
 }
 
+// UpdateDate implements repositories.EventRepositories.
+func (e *EventPGRepository) Update(ctx context.Context, req *requests.UpdateEventRequest, id string) (*models.Event, error) {
+	var event models.Event
+
+	location, err := time.LoadLocation("Asia/Bangkok")
+	if err != nil {
+		return nil, fmt.Errorf("failed to load Bangkok timezone: %v", err)
+	}
+
+	// แปลงเวลาจาก string -> time.Time
+	startTimeLocal, err := time.ParseInLocation("2006-01-02T15:04:05Z", req.Start, location)
+	if err != nil {
+		return nil, fmt.Errorf("failed to parse start time: %v", err)
+	}
+
+	// แปลงเป็น UTC ก่อนเก็บ
+	startTimeUTC := startTimeLocal.UTC()
+
+	// แปลงเวลาสิ้นสุด
+	endTimeLocal, err := time.ParseInLocation("2006-01-02T15:04:05Z", req.End, location)
+	if err != nil {
+		return nil, fmt.Errorf("failed to parse end time: %v", err)
+	}
+
+	// แปลงเป็น UTC ก่อนเก็บ
+	endTimeUTC := endTimeLocal.UTC()
+	
+	err = e.db.QueryRowContext(ctx, `UPDATE "EVENT" 
+		SET "Event_Title" = $1, "Event_Start" = $2, "Event_End" = $3, 
+			"Event_Reminder" = $4, "Event_Description" = $5  
+		WHERE "Event_Id" = $6 
+		RETURNING 
+			"Event_Id", "Event_Title", "Event_Description", 
+			"Event_Start", "Event_End", "Event_Type", "Event_Complete", 
+			"Event_Tag", "Event_Email", "Event_Reminder", "User_Id"
+	`, req.Title, startTimeUTC, endTimeUTC, req.Reminder, req.Description, id).
+		Scan(
+			&event.Id, &event.Title, &event.Description, &event.Start, &event.End,
+			&event.Type, &event.Completed, &event.Tag, &event.Notification, &event.Reminder, &event.UserId,
+		)
+	
+	if err != nil {
+		return nil, fmt.Errorf("event with id %s not found", id)
+	}
+
+	return &event, nil
+}
+
+
 // Updatestatus implements repositories.EventRepositories.
-func (e *EventPGRepository) Updatestatus(ctx context.Context, req *requests.UpdateEventRequest, id string) error {
-	_, err:= e.db.ExecContext(ctx, `UPDATE "EVENT" SET "Event_Complete" = $1 WHERE "Event_Id" = $2`, req.Completed, id)
+func (e *EventPGRepository) UpdateStatus(ctx context.Context, req *requests.UpdateStatusEventRequest, id string) error {
+	_, err := e.db.ExecContext(ctx, `UPDATE "EVENT" SET "Event_Complete" = $1 WHERE "Event_Id" = $2`, req.Completed, id)
 	if err != nil {
 		return err
 	}
 	return nil
- }
+}
 
 // GetByUserID implements repositories.EventRepositories.
 func (e *EventPGRepository) GetByUserID(ctx context.Context, id string) ([]*models.Event, error) {
@@ -47,7 +96,18 @@ func (e *EventPGRepository) GetAll(ctx context.Context) ([]*models.Event, error)
 // GetByID implements repositories.EventRepositories.
 func (e *EventPGRepository) GetByID(ctx context.Context, id string) (*models.Event, error) {
 	var event models.Event
-	err := e.db.GetContext(ctx, &event, `SELECT * WHERE "Event_Id" = $1`, id)
+	
+	err := e.db.QueryRowContext(ctx, `SELECT 
+	"Event_Id", "Event_Title", "Event_Description", 
+	"Event_Start", "Event_End", "Event_Type", 
+	"Event_Complete", "Event_Tag", "Event_Email", 
+	"Event_Reminder", "User_Id"
+	FROM "EVENT" WHERE "Event_Id" = $1`, id).
+	Scan(
+		&event.Id, &event.Title, &event.Description, &event.Start, &event.End,
+		&event.Type, &event.Completed, &event.Tag, &event.Notification, &event.Reminder, &event.UserId,
+	)
+	
 	if err != nil {
 		return nil, err
 	}
@@ -110,10 +170,10 @@ func (e *EventPGRepository) Create(ctx context.Context, req *requests.CreateEven
 		"Event_Email",
 		"Event_Reminder",
 		"User_Id"`,
-		req.Title, req.Description, startTimeUTC, endTimeUTC, req.Tag, req.Notification, req.ReminderAt, req.UserId,
+		req.Title, req.Description, startTimeUTC, endTimeUTC, req.Tag, req.Notification, req.Reminder, req.UserId,
 	).Scan(
 		&event.Id, &event.Title, &event.Description, &event.Start, &event.End,
-		&event.Tag, &event.Completed, &event.Type, &event.Notification, &event.ReminderAt, &event.UserId,
+		&event.Tag, &event.Completed, &event.Type, &event.Notification, &event.Reminder, &event.UserId,
 	)
 	if err != nil {
 		return nil, fmt.Errorf("failed to insert event: %v", err)

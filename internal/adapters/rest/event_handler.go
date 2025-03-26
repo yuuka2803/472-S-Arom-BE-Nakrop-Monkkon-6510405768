@@ -15,6 +15,7 @@ type EventHandler interface {
 	GetByIDEvent(c *fiber.Ctx) error
 	GetByUserIDEvent(c *fiber.Ctx) error
 	UpdateEvent(c *fiber.Ctx) error
+	UpdateStatusEvent(c *fiber.Ctx) error
 }
 
 type eventHandler struct {
@@ -28,16 +29,34 @@ func (p *eventHandler) UpdateEvent(c *fiber.Ctx) error {
 		return err
 	}
 	id := c.Params("id")
-	err := p.service.UpdateDateEvent(c.Context(), &req, id)
+	log.Println("Event ID:", id)
+	event,err := p.service.UpdateEvent(c.Context(), &req, id)
+	if err != nil {
+		log.Println("Error updating event:", err)
+		return c.Status(fiber.StatusNotFound).JSON(fiber.Map{
+			"message": err.Error(),
+		})
+	}
+	return c.Status(fiber.StatusOK).JSON(event)
+}
+
+// UpdateEvent implements EventHandler.
+func (p *eventHandler) UpdateStatusEvent(c *fiber.Ctx) error {
+	var req requests.UpdateStatusEventRequest
+	if err := c.BodyParser(&req); err != nil {
+		return err
+	}
+	id := c.Params("id")
+	err := p.service.UpdateStatusEvent(c.Context(), &req, id)
 	if err != nil {
 		return c.Status(fiber.StatusNotFound).JSON(fiber.Map{
-			"message": "Event not found",
+			"message": "Event not found 123",
 		})
 	}
 	return c.Status(fiber.StatusOK).JSON(fiber.Map{
 		"message": "Event updated",
 	})
-	
+
 }
 
 // GetAllEvent implements EventHandler.

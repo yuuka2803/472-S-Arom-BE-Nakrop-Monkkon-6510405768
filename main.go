@@ -93,6 +93,7 @@ func setupRoutes(app *fiber.App, db *sqlx.DB, cfg *configs.Config) {
 	app.Get(`/event/:id`, eventHandler.GetByIDEvent)
 	app.Get(`/event/user/:id`, eventHandler.GetByUserIDEvent)
 	app.Patch(`/event/:id`, eventHandler.UpdateEvent)
+	app.Patch(`/event/status/:id`,eventHandler.UpdateStatusEvent)
 
 
 	// Diary Routes

@@ -16,6 +16,6 @@ type Event struct {
 	Tag         	string    `json:"tag" db:"Event_Tag"`
 	Completed   	bool      `json:"completed" db:"Event_Complete"`
 	Notification    bool      `json:"notification" db:"Event_Email"`
-	ReminderAt      string    `json:"reminder" db:"Event_Reminder"`
+	Reminder      string    `json:"reminder" db:"Event_Reminder"`
 	UserId          uuid.UUID `json:"user_id" db:"User_Id"`
 }
