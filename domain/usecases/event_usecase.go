@@ -48,9 +48,14 @@ func (e *eventService) UpdateEvent(ctx context.Context, req *requests.UpdateEven
 	if updatedEvent.Notification && user.Email != "" {
 		subject := fmt.Sprintf("Update Notification: %s", updatedEvent.Title)
 
-		// จัดรูปแบบวันที่
-		startFormatted := updatedEvent.Start.Format("2 Jan 2006, 15:04:05")
-		endFormatted := updatedEvent.End.Format("2 Jan 2006, 15:04:05")
+		location, err := time.LoadLocation("Asia/Bangkok")
+		if err != nil {
+			log.Fatalf("Error loading time location: %v", err)
+		}
+
+		// แปลงเวลาให้เป็นโซนที่กำหนดก่อน Format
+		startFormatted := updatedEvent.Start.In(location).Format("2 Jan 2006, 15:04:05")
+		endFormatted := updatedEvent.End.In(location).Format("2 Jan 2006, 15:04:05")
 
 		body := fmt.Sprintf(`
 			<html>
@@ -201,9 +206,14 @@ func (e *eventService) CreateEvent(ctx context.Context, req *requests.CreateEven
 	if event.Notification && user.Email != "" {
 		subject := fmt.Sprintf("Arom Notification: %s", event.Title)
 
-		// จัดรูปแบบวันที่
-		startFormatted := event.Start.Format("2 Jan 2006, 15:04:05")
-		endFormatted := event.End.Format("2 Jan 2006, 15:04:05")
+		location, err := time.LoadLocation("Asia/Bangkok")
+		if err != nil {
+			log.Fatalf("Error loading time location: %v", err)
+		}
+
+		// แปลงเวลาให้เป็นโซนที่กำหนดก่อน Format
+		startFormatted := event.Start.In(location).Format("2 Jan 2006, 15:04:05")
+		endFormatted := event.End.In(location).Format("2 Jan 2006, 15:04:05")
 
 		body := fmt.Sprintf(`
 			<html>
@@ -218,7 +228,7 @@ func (e *eventService) CreateEvent(ctx context.Context, req *requests.CreateEven
 		`, event.Title, event.Description, startFormatted, endFormatted)
 
 		// ส่งอีเมลไปยังผู้ใช้
-		err := e.SendEmail(user.Email, subject, body)
+		err = e.SendEmail(user.Email, subject, body)
 		if err != nil {
 			return nil, err
 		}
