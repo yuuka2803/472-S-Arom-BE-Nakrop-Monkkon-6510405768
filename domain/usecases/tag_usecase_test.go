@@ -70,3 +70,63 @@ func TestGetByID(t *testing.T) {
 		mockTagRepo.AssertExpectations(t)
 	})
 }
+
+func TestGetByUserID(t *testing.T) {
+	ctx := context.Background()
+
+	t.Run("Success", func(t *testing.T) {
+		mockTagRepo := &mockrepos.MockTagRepo{}
+		mockTagRepo.On("GetByUserID", ctx, "1").Return([]*models.Tag{}, nil)
+
+		tagService := usecases.ProvideTagService(mockTagRepo, &configs.Config{})
+		tags, err := tagService.GetByUserIDTag(ctx, "1")
+
+		if err != nil {
+			t.Errorf("Error was not expected: %v", err)
+		}
+
+		if reflect.TypeOf(tags) != reflect.TypeOf([]*models.Tag{}) {
+			t.Errorf("Expected type %v but got %v", reflect.TypeOf([]*models.Tag{}), reflect.TypeOf(tags))
+		}
+
+		mockTagRepo.AssertExpectations(t)
+	})
+
+	t.Run("Not Found", func(t *testing.T) {
+		mockTagRepo := &mockrepos.MockTagRepo{}
+		mockTagRepo.On("GetByUserID", ctx, "1").Return(nil, nil)
+
+		tagService := usecases.ProvideTagService(mockTagRepo, &configs.Config{})
+		tags, err := tagService.GetByUserIDTag(ctx, "1")
+
+		if err != nil {
+			t.Errorf("Error was not expected: %v", err)
+		}
+
+		if tags != nil {
+			t.Errorf("Expected nil but got %v", tags)
+		}
+
+		mockTagRepo.AssertExpectations(t)
+	})
+
+	t.Run("Error", func(t *testing.T) {
+		mockTagRepo := &mockrepos.MockTagRepo{}
+		mockTagRepo.On("GetByUserID", ctx, "1").Return(nil, assert.AnError)
+
+		tagService := usecases.ProvideTagService(mockTagRepo, &configs.Config{})
+		tags, err := tagService.GetByUserIDTag(ctx, "1")
+
+		if err == nil {
+			t.Errorf("Error was expected but got nil")
+		}
+
+		if tags != nil {
+			t.Errorf("Expected nil but got %v", tags)
+		}
+
+		mockTagRepo.AssertExpectations(t)
+	})
+
+}
+
