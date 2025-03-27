@@ -130,3 +130,49 @@ func TestGetByUserID(t *testing.T) {
 
 }
 
+func TestDelete(t *testing.T) {
+	ctx := context.Background()
+
+	t.Run("Success", func(t *testing.T) {
+		mockTagRepo := &mockrepos.MockTagRepo{}
+		mockTagRepo.On("Delete", ctx, "1").Return(nil)
+
+		tagService := usecases.ProvideTagService(mockTagRepo, &configs.Config{})
+		err := tagService.DeleteTag(ctx, "1")
+
+		if err != nil {
+			t.Errorf("Error was not expected: %v", err)
+		}
+
+		mockTagRepo.AssertExpectations(t)
+	})
+
+	t.Run("Not Found", func(t *testing.T) {
+		mockTagRepo := &mockrepos.MockTagRepo{}
+
+		mockTagRepo.On("Delete", ctx, "1").Return(assert.AnError)
+
+		tagService := usecases.ProvideTagService(mockTagRepo, &configs.Config{})
+		err := tagService.DeleteTag(ctx, "1")
+
+		if err == nil {
+			t.Errorf("Error was expected but got nil")
+		}
+
+		mockTagRepo.AssertExpectations(t)
+	})
+
+	t.Run("Error", func(t *testing.T) {
+		mockTagRepo := &mockrepos.MockTagRepo{}
+		mockTagRepo.On("Delete", ctx, "1").Return(assert.AnError)
+
+		tagService := usecases.ProvideTagService(mockTagRepo, &configs.Config{})
+		err := tagService.DeleteTag(ctx, "1")
+
+		if err == nil {
+			t.Errorf("Error was expected but got nil")
+		}
+
+		mockTagRepo.AssertExpectations(t)
+	})
+}
