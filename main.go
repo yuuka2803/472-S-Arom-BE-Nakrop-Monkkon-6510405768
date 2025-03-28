@@ -18,6 +18,7 @@ import (
 	"github.com/kritpi/arom-web-services/internal/adapters/rest"
 	"github.com/kritpi/arom-web-services/internal/infrastrutures/mailer"
 	_ "github.com/lib/pq"
+	"gopkg.in/gomail.v2"
 )
 
 func main() {
@@ -32,7 +33,18 @@ func main() {
 	defer db.Close()
 
 	// Init mailer
-	mailerClient := mailer.NewMailer(cfg.SMTP_HOST, cfg.SMTP_PORT, cfg.EMAIL_FROM, cfg.EMAIL_PASSWORD)
+	messageClient := gomail.NewMessage()
+	dialer := gomail.NewDialer(cfg.SMTP_HOST, cfg.SMTP_PORT, cfg.EMAIL_FROM, cfg.EMAIL_PASSWORD)
+	// Set up the dialer to use SSL and TLS
+	// dialer.SSL = true
+	// dialer.TLSConfig = &tls.Config{
+	// 	InsecureSkipVerify: true,
+	// 	ServerName: cfg.SMTP_HOST,
+	// }
+	mailerClient := mailer.NewMailer(dialer,messageClient, cfg)
+
+
+
 
 	// Set up Fiber app
 	app := fiber.New()

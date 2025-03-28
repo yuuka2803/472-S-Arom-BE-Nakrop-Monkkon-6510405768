@@ -245,6 +245,6 @@ func ProvideEventService(eventRepo repositories.EventRepositories, userRepo repo
 		eventRepo: eventRepo,
 		userRepo:  userRepo,
 		config:    config,
-		mailer:   mailer,
+		mailer:    mailer,
 	}
 }

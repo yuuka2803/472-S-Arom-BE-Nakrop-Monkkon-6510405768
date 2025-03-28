@@ -3,7 +3,7 @@ package mailer
 import (
 	"log"
 
-	"github.com/go-gomail/gomail"
+	"gopkg.in/gomail.v2"
 	"github.com/kritpi/arom-web-services/configs"
 )
 
@@ -14,28 +14,31 @@ type Mailer interface {
 }
 
 type mailerImpl struct {
-	cfg    configs.Config
+	cfg    *configs.Config
 	dialer *gomail.Dialer
+	message *gomail.Message
 }
 
-func NewMailer(host string, port int, username string, password string) Mailer {
+func NewMailer(dialer *gomail.Dialer, message *gomail.Message, cfg *configs.Config) Mailer {
 	return &mailerImpl{
-		dialer: gomail.NewDialer(host, port, username, password),
-	}
+		dialer: dialer,
+		message: message,
+		cfg: cfg,
+}
 }
 
 // sendEmail implements Mailer.
 func (m *mailerImpl) SendEmail(to string, subject string, body string) error {
-	msg := gomail.NewMessage()
-	msg.SetHeader("From", m.cfg.EMAIL_FROM)
-	msg.SetHeader("To", to)
-	msg.SetHeader("Subject", subject)
-	msg.SetBody("text/html", body)
+	m.message.SetHeader("From", m.cfg.EMAIL_FROM)
+	m.message.SetHeader("To", to)
+	m.message.SetHeader("Subject", subject)
+	m.message.SetBody("text/html", body)
+	log.Println(m.cfg.EMAIL_FROM)
+	log.Println(to)
+	log.Println(subject)
+	log.Println(body)
 
-	d := gomail.NewDialer(m.cfg.SMTP_HOST, m.cfg.SMTP_PORT, m.cfg.EMAIL_FROM, m.cfg.EMAIL_PASSWORD)
-
-	// ส่งอีเมล
-	err := d.DialAndSend(msg)
+	err := m.dialer.DialAndSend(m.message)
 	if err != nil {
 		log.Printf("Error sending email: %v", err)
 		return err
