@@ -1,0 +1,638 @@
+
+<!DOCTYPE html>
+<html>
+	<head>
+		<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+		<title>usecases: Go Coverage Report</title>
+		<style>
+			body {
+				background: black;
+				color: rgb(80, 80, 80);
+			}
+			body, pre, #legend span {
+				font-family: Menlo, monospace;
+				font-weight: bold;
+			}
+			#topbar {
+				background: black;
+				position: fixed;
+				top: 0; left: 0; right: 0;
+				height: 42px;
+				border-bottom: 1px solid rgb(80, 80, 80);
+			}
+			#content {
+				margin-top: 50px;
+			}
+			#nav, #legend {
+				float: left;
+				margin-left: 10px;
+			}
+			#legend {
+				margin-top: 12px;
+			}
+			#nav {
+				margin-top: 10px;
+			}
+			#legend span {
+				margin: 0 5px;
+			}
+			.cov0 { color: rgb(192, 0, 0) }
+.cov1 { color: rgb(128, 128, 128) }
+.cov2 { color: rgb(116, 140, 131) }
+.cov3 { color: rgb(104, 152, 134) }
+.cov4 { color: rgb(92, 164, 137) }
+.cov5 { color: rgb(80, 176, 140) }
+.cov6 { color: rgb(68, 188, 143) }
+.cov7 { color: rgb(56, 200, 146) }
+.cov8 { color: rgb(44, 212, 149) }
+.cov9 { color: rgb(32, 224, 152) }
+.cov10 { color: rgb(20, 236, 155) }
+
+		</style>
+	</head>
+	<body>
+		<div id="topbar">
+			<div id="nav">
+				<select id="files">
+				
+				<option value="file0">github.com/kritpi/arom-web-services/domain/usecases/diary_usecase.go (0.0%)</option>
+				
+				<option value="file1">github.com/kritpi/arom-web-services/domain/usecases/event_usecase.go (74.4%)</option>
+				
+				<option value="file2">github.com/kritpi/arom-web-services/domain/usecases/tag_usecase.go (0.0%)</option>
+				
+				<option value="file3">github.com/kritpi/arom-web-services/domain/usecases/user_usecase.go (0.0%)</option>
+				
+				</select>
+			</div>
+			<div id="legend">
+				<span>not tracked</span>
+			
+				<span class="cov0">not covered</span>
+				<span class="cov8">covered</span>
+			
+			</div>
+		</div>
+		<div id="content">
+		
+		<pre class="file" id="file0" style="display: none">package usecases
+
+import (
+        "context"
+        "fmt"
+        "mime/multipart"
+
+        "github.com/kritpi/arom-web-services/configs"
+        "github.com/kritpi/arom-web-services/domain/models"
+        "github.com/kritpi/arom-web-services/domain/repositories"
+        "github.com/kritpi/arom-web-services/domain/requests"
+        "github.com/kritpi/arom-web-services/internal/adapters/pg"
+)
+
+type DiaryUseCase interface {
+        CreateDiary(ctx context.Context, req *requests.CreateDiaryRequest, files []*multipart.FileHeader) (*models.Diary, error)
+        GetAllDiary(ctx context.Context) ([]*models.Diary, error)
+        GetDiaryByID(ctx context.Context, id string) (*models.Diary, error)
+        GetDiaryByUserID(ctx context.Context, userID string) ([]*models.Diary, error)
+        GetDiaryByDate(ctx context.Context, date string) (*models.Diary, error)
+        UpdateDiary(ctx context.Context, req *requests.UpdateDiaryRequest, date string, files []*multipart.FileHeader) error
+}
+
+type diaryService struct {
+        diaryRepo repositories.DiaryRepositories
+        config    *configs.Config
+}
+
+func (d *diaryService) CreateDiary(ctx context.Context, req *requests.CreateDiaryRequest, files []*multipart.FileHeader) (*models.Diary, error) <span class="cov0" title="0">{
+        var imageURLs []string
+        for _, fileHeader := range files </span><span class="cov0" title="0">{
+                if fileHeader == nil </span><span class="cov0" title="0">{
+                        continue</span>
+                }
+
+                <span class="cov0" title="0">file, err := fileHeader.Open()
+                if err != nil </span><span class="cov0" title="0">{
+                        return nil, fmt.Errorf("failed to open file: %w", err)
+                }</span>
+                <span class="cov0" title="0">defer file.Close() // ✅ Ensure file is closed after function exits
+
+                url, err := pg.UploadImageToSupabaseV2(file, fileHeader.Filename, d.config.SUPABASE_BUCKET, d.config)
+                if err != nil </span><span class="cov0" title="0">{
+                        return nil, fmt.Errorf("failed to upload file: %w", err)
+                }</span>
+
+                <span class="cov0" title="0">imageURLs = append(imageURLs, url)</span>
+        }
+
+        // Save image URLs in request
+        <span class="cov0" title="0">req.Images = imageURLs
+        return d.diaryRepo.Create(ctx, req)</span>
+}
+
+func (d *diaryService) GetAllDiary(ctx context.Context) ([]*models.Diary, error) <span class="cov0" title="0">{
+        return d.diaryRepo.GetAll(ctx)
+}</span>
+func (d *diaryService) GetDiaryByID(ctx context.Context, id string) (*models.Diary, error) <span class="cov0" title="0">{
+        return d.diaryRepo.GetByID(ctx, id)
+}</span>
+
+func (d *diaryService) GetDiaryByUserID(ctx context.Context, userID string) ([]*models.Diary, error) <span class="cov0" title="0">{
+        return d.diaryRepo.GetByUserID(ctx, userID)
+}</span>
+
+func (d *diaryService) GetDiaryByDate(ctx context.Context, date string) (*models.Diary, error) <span class="cov0" title="0">{
+        return d.diaryRepo.GetByDate(ctx, date)
+}</span>
+
+func (d *diaryService) UpdateDiary(ctx context.Context, req *requests.UpdateDiaryRequest, date string, files []*multipart.FileHeader) error <span class="cov0" title="0">{
+        imageURLs := req.ImagesURL
+        for _, fileHeader := range files </span><span class="cov0" title="0">{
+                if fileHeader == nil </span><span class="cov0" title="0">{
+                        continue</span>
+                }
+
+                <span class="cov0" title="0">file, err := fileHeader.Open()
+                if err != nil </span><span class="cov0" title="0">{
+                        return fmt.Errorf("failed to open file: %w", err)
+                }</span>
+                <span class="cov0" title="0">defer file.Close() 
+
+                url, err := pg.UploadImageToSupabaseV2(file, fileHeader.Filename, d.config.SUPABASE_BUCKET, d.config)
+                if err != nil </span><span class="cov0" title="0">{
+                        return fmt.Errorf("failed to upload file: %w", err)
+                }</span>
+
+                <span class="cov0" title="0">imageURLs = append(imageURLs, url)</span>
+        }
+        <span class="cov0" title="0">req.Images = imageURLs
+        return d.diaryRepo.Update(ctx, req, date)</span>
+}
+
+func ProvideDiaryService(diaryRepo repositories.DiaryRepositories, config *configs.Config) DiaryUseCase <span class="cov0" title="0">{
+        return &amp;diaryService{
+                diaryRepo: diaryRepo,
+                config:    config,
+        }
+}</span>
+</pre>
+		
+		<pre class="file" id="file1" style="display: none">package usecases
+
+import (
+        "context"
+        "fmt"
+        "log"
+        "time"
+
+        "github.com/kritpi/arom-web-services/configs"
+        "github.com/kritpi/arom-web-services/domain/models"
+        "github.com/kritpi/arom-web-services/domain/repositories"
+        "github.com/kritpi/arom-web-services/domain/requests"
+        "github.com/kritpi/arom-web-services/internal/infrastrutures/mailer"
+)
+
+type EventUseCase interface {
+        CreateEvent(ctx context.Context, req *requests.CreateEventRequest) (*models.Event, error)
+        GetAllEvent(ctx context.Context) ([]*models.Event, error)
+        GetByIDEvent(ctx context.Context, id string) (*models.Event, error)
+        GetByUserIDEvent(ctx context.Context, id string) ([]*models.Event, error)
+        UpdateEvent(ctx context.Context, req *requests.UpdateEventRequest, id string) (*models.Event, error)
+        UpdateStatusEvent(ctx context.Context, req *requests.UpdateStatusEventRequest, id string) error
+}
+
+type eventService struct {
+        eventRepo repositories.EventRepositories
+        userRepo  repositories.UserRepositories
+        mailer    mailer.Mailer
+        config    *configs.Config
+}
+
+// UpdateEvent implements EventUseCase.
+func (e *eventService) UpdateEvent(ctx context.Context, req *requests.UpdateEventRequest, id string) (*models.Event, error) <span class="cov8" title="1">{
+        // อัปเดต Event และใช้ค่าใหม่
+        updatedEvent, err := e.eventRepo.Update(ctx, req, id)
+        if err != nil </span><span class="cov8" title="1">{
+                return nil, err
+        }</span>
+
+        // ดึงข้อมูลผู้ใช้จาก UserRepository
+        <span class="cov8" title="1">user, err := e.userRepo.GetUserByUserID(ctx, &amp;requests.SendEmailRequest{
+                ID: req.UserId, // ใช้ UserId เพื่อดึงข้อมูล
+        })
+        if err != nil </span><span class="cov0" title="0">{
+                return nil, err
+        }</span>
+
+        // เช็คว่า Event_Email เป็น true และ User มี Email
+        <span class="cov8" title="1">if updatedEvent.Notification &amp;&amp; user.Email != "" </span><span class="cov8" title="1">{
+                subject := fmt.Sprintf("Update Notification: %s", updatedEvent.Title)
+
+                location, err := time.LoadLocation("Asia/Bangkok")
+                if err != nil </span><span class="cov0" title="0">{
+                        log.Fatalf("Error loading time location: %v", err)
+                }</span>
+
+                // แปลงเวลาให้เป็นโซนที่กำหนดก่อน Format
+                <span class="cov8" title="1">startFormatted := updatedEvent.Start.In(location).Format("2 Jan 2006, 15:04:05")
+                endFormatted := updatedEvent.End.In(location).Format("2 Jan 2006, 15:04:05")
+
+                body := fmt.Sprintf(`
+                        &lt;html&gt;
+                        &lt;head&gt;&lt;title&gt;Arom Event Notification&lt;/title&gt;&lt;/head&gt;
+                        &lt;body&gt;
+                                &lt;h1&gt;%s&lt;/h1&gt;
+                                &lt;p&gt;%s&lt;/p&gt;
+                                &lt;p&gt;&lt;strong&gt;Event starts at:&lt;/strong&gt; %s&lt;/p&gt;
+                                &lt;p&gt;&lt;strong&gt;Event ends at:&lt;/strong&gt; %s&lt;/p&gt;
+                        &lt;/body&gt;
+                        &lt;/html&gt;
+                `, updatedEvent.Title, updatedEvent.Description, startFormatted, endFormatted)
+
+                // ส่งอีเมลไปยังผู้ใช้
+                if err := e.mailer.SendEmail(user.Email, subject, body); err != nil </span><span class="cov8" title="1">{
+                        return nil, err
+                }</span>
+        }
+
+        // ตรวจสอบว่า updatedEvent.Reminder ไม่ใช่ "None"
+        <span class="cov8" title="1">if updatedEvent.Reminder != "None" </span><span class="cov8" title="1">{
+                log.Println("Reminder function called with reminderAt:", updatedEvent.Reminder)
+                // เรียกใช้ฟังก์ชัน SendReminderEmailBeforeEvent
+                err := e.SendReminderEmailBeforeEvent(updatedEvent, user, updatedEvent.Reminder)
+                if err != nil </span><span class="cov0" title="0">{
+                        return nil, err
+                }</span>
+        }
+
+        <span class="cov8" title="1">return updatedEvent, nil</span> // คืนค่า updatedEvent แทน nil
+}
+
+// SendReminderEmailBeforeEvent ใช้ส่งอีเมลก่อนเวลาเริ่ม Event
+func (e *eventService) SendReminderEmailBeforeEvent(event *models.Event, user *models.User, durationStr string) error <span class="cov8" title="1">{
+        // ถ้า durationStr เป็น "None" ให้ return nil
+        if durationStr == "None" </span><span class="cov0" title="0">{
+                log.Println("Reminder is set to none. Skipping email.")
+                return nil
+        }</span>
+
+        // แปลง durationStr เป็น time.Duration
+        <span class="cov8" title="1">durationBeforeEvent, err := time.ParseDuration(durationStr)
+        if err != nil </span><span class="cov0" title="0">{
+                log.Printf("Error parsing duration: %v", err)
+                return err
+        }</span>
+
+        // โหลดโซนเวลาของกรุงเทพฯ
+        <span class="cov8" title="1">location, err := time.LoadLocation("Asia/Bangkok")
+        if err != nil </span><span class="cov0" title="0">{
+                log.Fatalf("Error loading time location: %v", err)
+        }</span>
+
+        // แปลง event.Start เป็นเวลาตามโซนที่ต้องการ
+        <span class="cov8" title="1">eventStartTime := event.Start.In(location)
+
+        // แปลงเวลาปัจจุบันให้เป็นโซนเวลาที่ต้องการ
+        currentTime := time.Now().In(location)
+
+        // หาช่วงเวลาที่ต้องการส่งก่อน Event
+        timeUntilEventStart := time.Until(eventStartTime) // คำนวณระยะเวลาจากเวลาปัจจุบันถึงเวลาของ Event
+        timeToWait := timeUntilEventStart - durationBeforeEvent
+
+        // ตั้งเวลาให้ส่งอีเมลตามระยะเวลาที่กำหนด
+        timer := time.NewTimer(timeToWait)
+
+        log.Printf("Reminder duration: %v, Time until event start: %v, Time to wait: %v",
+                timeUntilEventStart, timeToWait, timeToWait)
+        log.Println("Current time:", currentTime)
+        log.Println("Event start time:", eventStartTime)
+
+        go func() </span><span class="cov8" title="1">{
+                &lt;-timer.C // รอจนกว่าจะถึงเวลา
+                // ส่งอีเมล
+                subject := fmt.Sprintf("Reminder: %s", event.Title)
+
+                // จัดรูปแบบวันที่
+                startFormatted := event.Start.In(location).Format("2 Jan 2006, 15:04:05")
+                endFormatted := event.End.In(location).Format("2 Jan 2006, 15:04:05")
+
+                body := fmt.Sprintf(`
+                        &lt;html&gt;
+                        &lt;head&gt;&lt;title&gt;Arom Event Reminder&lt;/title&gt;&lt;/head&gt;
+                        &lt;body&gt;
+                                &lt;h1&gt;%s&lt;/h1&gt;
+                                &lt;p&gt;%s&lt;/p&gt;
+                                &lt;p&gt;&lt;strong&gt;Event starts at:&lt;/strong&gt; %s&lt;/p&gt;
+                                &lt;p&gt;&lt;strong&gt;Event ends at:&lt;/strong&gt; %s&lt;/p&gt;
+                        &lt;/body&gt;
+                        &lt;/html&gt;
+                `, event.Title, event.Description, startFormatted, endFormatted)
+
+                // ส่งอีเมลไปยังผู้ใช้
+                err := e.mailer.SendEmail(user.Email, subject, body)
+                if err != nil </span><span class="cov0" title="0">{
+                        log.Printf("Error sending reminder email: %v", err)
+                }</span>
+        }()
+
+        <span class="cov8" title="1">return nil</span>
+}
+
+// CreateEvent implements EventUseCase.
+func (e *eventService) CreateEvent(ctx context.Context, req *requests.CreateEventRequest) (*models.Event, error) <span class="cov8" title="1">{
+        // สร้าง Event
+        event, err := e.eventRepo.Create(ctx, req)
+        if err != nil </span><span class="cov0" title="0">{
+                return nil, err
+        }</span>
+
+        // ดึงข้อมูลผู้ใช้จาก UserRepository
+        <span class="cov8" title="1">user, err := e.userRepo.GetUserByUserID(ctx, &amp;requests.SendEmailRequest{
+                ID: req.UserId, // ใช้ UserId เพื่อดึงข้อมูล
+        })
+        if err != nil </span><span class="cov0" title="0">{
+                return nil, err
+        }</span>
+
+        // เช็คว่า Event_Email เป็น true หรือไม่
+        <span class="cov8" title="1">if event.Notification &amp;&amp; user.Email != "" </span><span class="cov8" title="1">{
+                subject := fmt.Sprintf("Arom Notification: %s", event.Title)
+
+                location, err := time.LoadLocation("Asia/Bangkok")
+                if err != nil </span><span class="cov0" title="0">{
+                        log.Fatalf("Error loading time location: %v", err)
+                }</span>
+
+                // แปลงเวลาให้เป็นโซนที่กำหนดก่อน Format
+                <span class="cov8" title="1">startFormatted := event.Start.In(location).Format("2 Jan 2006, 15:04:05")
+                endFormatted := event.End.In(location).Format("2 Jan 2006, 15:04:05")
+
+                body := fmt.Sprintf(`
+                        &lt;html&gt;
+                        &lt;head&gt;&lt;title&gt;Arom Event Notification&lt;/title&gt;&lt;/head&gt;
+                        &lt;body&gt;
+                                &lt;h1&gt;%s&lt;/h1&gt;
+                                &lt;p&gt;%s&lt;/p&gt;
+                                &lt;p&gt;&lt;strong&gt;Event starts at:&lt;/strong&gt; %s&lt;/p&gt;
+                                &lt;p&gt;&lt;strong&gt;Event ends at:&lt;/strong&gt; %s&lt;/p&gt;
+                        &lt;/body&gt;
+                        &lt;/html&gt;
+                `, event.Title, event.Description, startFormatted, endFormatted)
+
+                // ส่งอีเมลไปยังผู้ใช้
+                err = e.mailer.SendEmail(user.Email, subject, body)
+                if err != nil </span><span class="cov8" title="1">{
+                        return nil, err
+                }</span>
+        }
+
+        // ตรวจสอบว่า event.Reminder ไม่ใช่ "None"
+        <span class="cov8" title="1">if event.Reminder != "None" </span><span class="cov0" title="0">{
+                log.Println("Reminder function called with reminderAt:", event.Reminder)
+                // เรียกใช้ฟังก์ชัน SendReminderEmailBeforeEvent
+                err := e.SendReminderEmailBeforeEvent(event, user, event.Reminder)
+                if err != nil </span><span class="cov0" title="0">{
+                        return nil, err
+                }</span>
+        }
+
+        <span class="cov8" title="1">return event, nil</span>
+}
+
+// GetByUserIDEvent implements EventUseCase.
+func (e *eventService) GetByUserIDEvent(ctx context.Context, id string) ([]*models.Event, error) <span class="cov0" title="0">{
+        return e.eventRepo.GetByUserID(ctx, id)
+}</span>
+
+// GetAllEvent implements EventUseCase.
+func (e *eventService) GetAllEvent(ctx context.Context) ([]*models.Event, error) <span class="cov0" title="0">{
+        return e.eventRepo.GetAll(ctx)
+}</span>
+
+// GetByIDEvent implements EventUseCase.
+func (e *eventService) GetByIDEvent(ctx context.Context, id string) (*models.Event, error) <span class="cov0" title="0">{
+        return e.eventRepo.GetByID(ctx, id)
+}</span>
+
+// UpdateStatusDateEvent implements EventUseCase.
+func (e *eventService) UpdateStatusEvent(ctx context.Context, req *requests.UpdateStatusEventRequest, id string) error <span class="cov0" title="0">{
+        return e.eventRepo.UpdateStatus(ctx, req, id)
+}</span>
+
+func ProvideEventService(eventRepo repositories.EventRepositories, userRepo repositories.UserRepositories, config *configs.Config, mailer mailer.Mailer) EventUseCase <span class="cov8" title="1">{
+        return &amp;eventService{
+                eventRepo: eventRepo,
+                userRepo:  userRepo,
+                config:    config,
+                mailer:   mailer,
+        }
+}</span>
+</pre>
+		
+		<pre class="file" id="file2" style="display: none">package usecases
+
+import (
+        "context"
+
+        "github.com/kritpi/arom-web-services/domain/models"
+        "github.com/kritpi/arom-web-services/domain/repositories"
+        "github.com/kritpi/arom-web-services/domain/requests"
+        "github.com/kritpi/arom-web-services/configs"
+)
+
+type TagUseCase interface {
+        CreateTag(ctx context.Context, req *requests.CreateTagRequest) (*models.Tag, error)
+        GetByIDTag(ctx context.Context, id string) (*models.Tag, error)
+        GetByUserIDTag(ctx context.Context, id string) ([]*models.Tag, error)
+        DeleteTag(ctx context.Context, id string) error
+        UpdateTag(ctx context.Context, req *requests.UpdateTagRequest , id string)(error)
+}
+
+type tagService struct {
+        tagRepo repositories.TagRepositories
+        config  *configs.Config
+}
+
+// GetByUserID implements TagUseCase.
+func (t *tagService) GetByUserIDTag(ctx context.Context, id string) ([]*models.Tag, error) <span class="cov0" title="0">{
+        return t.tagRepo.GetByUserID(ctx, id)
+}</span>
+
+// GetByID implements TagUseCase.        
+func (t *tagService) GetByIDTag(ctx context.Context, id string) (*models.Tag, error) <span class="cov0" title="0">{
+        return t.tagRepo.GetByID(ctx, id)
+}</span>
+
+// Create implements TagUseCase.        
+func (t *tagService) CreateTag(ctx context.Context, req *requests.CreateTagRequest) (*models.Tag, error) <span class="cov0" title="0">{
+        return t.tagRepo.Create(ctx, req)
+}</span>
+
+func (t *tagService) DeleteTag(ctx context.Context, id string) error <span class="cov0" title="0">{
+        return t.tagRepo.Delete(ctx, id)
+}</span>
+
+func (t *tagService) UpdateTag(ctx context.Context, req *requests.UpdateTagRequest, id string) error <span class="cov0" title="0">{
+        return t.tagRepo.Update(ctx, req, id)
+}</span>
+
+func ProvideTagService(tagRepo repositories.TagRepositories, config *configs.Config) TagUseCase <span class="cov0" title="0">{
+        return &amp;tagService{
+                tagRepo: tagRepo,
+                config:    config,
+        }
+}</pre>
+		
+		<pre class="file" id="file3" style="display: none">package usecases
+
+import (
+        "context"
+        "errors"
+        "mime/multipart"
+        "time"
+
+        "github.com/jackc/pgx/v5/pgtype"
+        "github.com/kritpi/arom-web-services/configs"
+        "github.com/kritpi/arom-web-services/domain/models"
+        "github.com/kritpi/arom-web-services/internal/adapters/pg"
+
+        "github.com/kritpi/arom-web-services/domain/repositories"
+        "github.com/kritpi/arom-web-services/domain/requests"
+        "github.com/kritpi/arom-web-services/domain/responses"
+
+        jwt "github.com/golang-jwt/jwt/v4"
+        "golang.org/x/crypto/bcrypt"
+)
+
+type UserUseCase interface {
+        // Register(ctx context.Context, req *requests.RegisterRequest) (*responses.UserResponse, error)
+        Register(ctx context.Context, req *requests.RegisterRequest, file multipart.File, fileName string) (*responses.UserResponse, error)
+        Login(ctx context.Context, req *requests.LoginRequest) (*responses.LoginResponse, error)
+}
+
+type userService struct {
+        userRepo repositories.UserRepositories
+        config   *configs.Config
+}
+
+// Register implements UserUseCase.
+func (u *userService) Register(ctx context.Context, req *requests.RegisterRequest, file multipart.File, fileName string) (*responses.UserResponse, error) <span class="cov0" title="0">{
+        // Hash the password
+        hashedPassword, err := bcrypt.GenerateFromPassword([]byte(req.Password), bcrypt.DefaultCost)
+        if err != nil </span><span class="cov0" title="0">{
+                        return nil, err
+        }</span>
+
+        // Check if username already exists
+        <span class="cov0" title="0">loginReq := &amp;requests.LoginRequest{Username: req.Username, Password: req.Password}
+        existingUser, _ := u.userRepo.GetUserByUsername(ctx, loginReq)
+        if existingUser != nil </span><span class="cov0" title="0">{
+                        return nil, errors.New("username already exists")
+        }</span>
+
+        // Initialize image URL variable
+        <span class="cov0" title="0">var profileImageURL string
+        if file != nil </span><span class="cov0" title="0">{
+                        // Upload image to Supabase
+                        profileImageURL, err = pg.UploadImageToSupabase(file, fileName, u.config.SUPABASE_BUCKET, u.config)
+                        if err != nil </span><span class="cov0" title="0">{
+                                        return nil, err
+                        }</span>
+        }
+
+        // Create new user model
+        <span class="cov0" title="0">user := &amp;models.User{
+                        Username:     req.Username,
+                        Password:     string(hashedPassword),
+                        Email:                  req.Email,
+                        ProfileImage: profileImageURL,
+        }
+
+        // Save user to repository
+        if _, err := u.userRepo.CreateUser(ctx, user); err != nil </span><span class="cov0" title="0">{
+                        return nil, err
+        }</span>
+
+        // Prepare response
+        <span class="cov0" title="0">return &amp;responses.UserResponse{
+                        ID:           pgtype.UUID{Bytes: [16]byte(user.ID)},
+                        Username:     pgtype.Text{String: user.Username, Valid: true},
+                        Email:        pgtype.Text{String: user.Email, Valid: true},
+                        ProfileImage: pgtype.Text{String: profileImageURL, Valid: true},
+        }, nil</span>
+}
+
+// Login implements UserUseCase.
+func (u *userService) Login(ctx context.Context, req *requests.LoginRequest) (*responses.LoginResponse, error) <span class="cov0" title="0">{
+        // Retrieve user from repository by username
+        user, err := u.userRepo.GetUserByUsername(ctx, req)
+        if err != nil || user == nil </span><span class="cov0" title="0">{
+                return nil, errors.New("invalid credentials")
+        }</span>
+
+        // Compare provided password with stored hash
+        <span class="cov0" title="0">if err := bcrypt.CompareHashAndPassword([]byte(user.Password), []byte(req.Password)); err != nil </span><span class="cov0" title="0">{
+                return nil, errors.New("invalid credentials")
+        }</span>
+
+        // Generate JWT token
+        <span class="cov0" title="0">token, err := u.generateJWT(user.ID.String(), user.Username, user.Email, user.ProfileImage)
+        if err != nil </span><span class="cov0" title="0">{
+                return nil, err
+        }</span>
+
+        // Prepare response
+        <span class="cov0" title="0">return &amp;responses.LoginResponse{Token: token}, nil</span>
+}
+
+func (u *userService) generateJWT(userID, username, email, profileImage string) (string, error) <span class="cov0" title="0">{
+        claims := jwt.MapClaims{
+                "user_id":  userID,
+                "username": username,
+                "email": email,
+                "ProfileImage": profileImage,
+                "exp": time.Now().Add(time.Hour * 24).Unix(),
+        }
+        token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
+
+        return token.SignedString([]byte(u.config.JWT_SECRET))
+}</span>
+
+// ProvideUserService is a factory function to create a new UserUseCase.
+func ProvideUserService(userRepo repositories.UserRepositories, config *configs.Config) UserUseCase <span class="cov0" title="0">{
+        return &amp;userService{
+                userRepo: userRepo,
+                config:   config,
+        }
+}</span>
+</pre>
+		
+		</div>
+	</body>
+	<script>
+	(function() {
+		var files = document.getElementById('files');
+		var visible;
+		files.addEventListener('change', onChange, false);
+		function select(part) {
+			if (visible)
+				visible.style.display = 'none';
+			visible = document.getElementById(part);
+			if (!visible)
+				return;
+			files.value = part;
+			visible.style.display = 'block';
+			location.hash = part;
+		}
+		function onChange() {
+			select(files.value);
+			window.scrollTo(0, 0);
+		}
+		if (location.hash != "") {
+			select(location.hash.substr(1));
+		}
+		if (!visible) {
+			select("file0");
+		}
+	})();
+	</script>
+</html>

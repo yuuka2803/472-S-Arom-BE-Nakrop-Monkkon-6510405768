@@ -16,6 +16,7 @@ import (
 	"github.com/kritpi/arom-web-services/domain/usecases"
 	"github.com/kritpi/arom-web-services/internal/adapters/pg"
 	"github.com/kritpi/arom-web-services/internal/adapters/rest"
+	"github.com/kritpi/arom-web-services/internal/infrastrutures/mailer"
 	_ "github.com/lib/pq"
 )
 
@@ -30,10 +31,13 @@ func main() {
 	}
 	defer db.Close()
 
+	// Init mailer
+	mailerClient := mailer.NewMailer(cfg.SMTP_HOST, cfg.SMTP_PORT, cfg.EMAIL_FROM, cfg.EMAIL_PASSWORD)
+
 	// Set up Fiber app
 	app := fiber.New()
 	setupMiddleware(app)
-	setupRoutes(app, db, cfg)
+	setupRoutes(app, db, cfg, mailerClient)
 
 	// Start server with graceful shutdown
 	startServer(app)
@@ -61,7 +65,7 @@ func setupMiddleware(app *fiber.App) {
 	}))
 }
 
-func setupRoutes(app *fiber.App, db *sqlx.DB, cfg *configs.Config) {
+func setupRoutes(app *fiber.App, db *sqlx.DB, cfg *configs.Config, mailerClient mailer.Mailer) {
 	// Repositories and Use Cases
 
 	// User Repo
@@ -72,7 +76,7 @@ func setupRoutes(app *fiber.App, db *sqlx.DB, cfg *configs.Config) {
 
 	// Event Repo
 	eventRepo := pg.NewEventPGRepository(db)
-	eventService := usecases.ProvideEventService(eventRepo, userRepo, cfg)
+	eventService := usecases.ProvideEventService(eventRepo, userRepo, cfg, mailerClient)
 	eventHandler := rest.NewEventHandler(eventService)
 
 	// Diary Repo

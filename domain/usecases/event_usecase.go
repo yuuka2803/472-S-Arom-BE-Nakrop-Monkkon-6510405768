@@ -10,7 +10,7 @@ import (
 	"github.com/kritpi/arom-web-services/domain/models"
 	"github.com/kritpi/arom-web-services/domain/repositories"
 	"github.com/kritpi/arom-web-services/domain/requests"
-	"gopkg.in/gomail.v2"
+	"github.com/kritpi/arom-web-services/internal/infrastrutures/mailer"
 )
 
 type EventUseCase interface {
@@ -18,13 +18,14 @@ type EventUseCase interface {
 	GetAllEvent(ctx context.Context) ([]*models.Event, error)
 	GetByIDEvent(ctx context.Context, id string) (*models.Event, error)
 	GetByUserIDEvent(ctx context.Context, id string) ([]*models.Event, error)
-	UpdateEvent(ctx context.Context, req *requests.UpdateEventRequest, id string) (*models.Event,error)
+	UpdateEvent(ctx context.Context, req *requests.UpdateEventRequest, id string) (*models.Event, error)
 	UpdateStatusEvent(ctx context.Context, req *requests.UpdateStatusEventRequest, id string) error
 }
 
 type eventService struct {
 	eventRepo repositories.EventRepositories
 	userRepo  repositories.UserRepositories
+	mailer    mailer.Mailer
 	config    *configs.Config
 }
 
@@ -70,7 +71,7 @@ func (e *eventService) UpdateEvent(ctx context.Context, req *requests.UpdateEven
 		`, updatedEvent.Title, updatedEvent.Description, startFormatted, endFormatted)
 
 		// ส่งอีเมลไปยังผู้ใช้
-		if err := e.SendEmail(user.Email, subject, body); err != nil {
+		if err := e.mailer.SendEmail(user.Email, subject, body); err != nil {
 			return nil, err
 		}
 	}
@@ -88,35 +89,8 @@ func (e *eventService) UpdateEvent(ctx context.Context, req *requests.UpdateEven
 	return updatedEvent, nil // คืนค่า updatedEvent แทน nil
 }
 
-
-
-// UpdateStatusDateEvent implements EventUseCase.
-func (e *eventService) UpdateStatusEvent(ctx context.Context, req *requests.UpdateStatusEventRequest, id string) error {
-	return e.eventRepo.UpdateStatus(ctx, req, id)
-}
-
-// SendEmail ใช้ส่งอีเมล
-func (e *eventService) SendEmail(to string, subject string, body string) error {
-	m := gomail.NewMessage()
-	m.SetHeader("From", e.config.EMAIL_FROM)
-	m.SetHeader("To", to)
-	m.SetHeader("Subject", subject)
-	m.SetBody("text/html", body)
-
-	d := gomail.NewDialer(e.config.SMTP_HOST, e.config.SMTP_PORT, e.config.EMAIL_FROM, e.config.EMAIL_PASSWORD)
-
-	// ส่งอีเมล
-	err := d.DialAndSend(m)
-	if err != nil {
-		log.Printf("Error sending email: %v", err)
-		return err
-	}
-	return nil
-}
-
 // SendReminderEmailBeforeEvent ใช้ส่งอีเมลก่อนเวลาเริ่ม Event
 func (e *eventService) SendReminderEmailBeforeEvent(event *models.Event, user *models.User, durationStr string) error {
-
 	// ถ้า durationStr เป็น "None" ให้ return nil
 	if durationStr == "None" {
 		log.Println("Reminder is set to none. Skipping email.")
@@ -149,7 +123,7 @@ func (e *eventService) SendReminderEmailBeforeEvent(event *models.Event, user *m
 	// ตั้งเวลาให้ส่งอีเมลตามระยะเวลาที่กำหนด
 	timer := time.NewTimer(timeToWait)
 
-	log.Printf("Reminder duration: %v, Time until event start: %v, Time to wait: %v", 
+	log.Printf("Reminder duration: %v, Time until event start: %v, Time to wait: %v",
 		timeUntilEventStart, timeToWait, timeToWait)
 	log.Println("Current time:", currentTime)
 	log.Println("Event start time:", eventStartTime)
@@ -176,7 +150,7 @@ func (e *eventService) SendReminderEmailBeforeEvent(event *models.Event, user *m
 		`, event.Title, event.Description, startFormatted, endFormatted)
 
 		// ส่งอีเมลไปยังผู้ใช้
-		err := e.SendEmail(user.Email, subject, body)
+		err := e.mailer.SendEmail(user.Email, subject, body)
 		if err != nil {
 			log.Printf("Error sending reminder email: %v", err)
 		}
@@ -184,7 +158,6 @@ func (e *eventService) SendReminderEmailBeforeEvent(event *models.Event, user *m
 
 	return nil
 }
-
 
 // CreateEvent implements EventUseCase.
 func (e *eventService) CreateEvent(ctx context.Context, req *requests.CreateEventRequest) (*models.Event, error) {
@@ -228,7 +201,7 @@ func (e *eventService) CreateEvent(ctx context.Context, req *requests.CreateEven
 		`, event.Title, event.Description, startFormatted, endFormatted)
 
 		// ส่งอีเมลไปยังผู้ใช้
-		err = e.SendEmail(user.Email, subject, body)
+		err = e.mailer.SendEmail(user.Email, subject, body)
 		if err != nil {
 			return nil, err
 		}
@@ -247,7 +220,6 @@ func (e *eventService) CreateEvent(ctx context.Context, req *requests.CreateEven
 	return event, nil
 }
 
-
 // GetByUserIDEvent implements EventUseCase.
 func (e *eventService) GetByUserIDEvent(ctx context.Context, id string) ([]*models.Event, error) {
 	return e.eventRepo.GetByUserID(ctx, id)
@@ -263,10 +235,16 @@ func (e *eventService) GetByIDEvent(ctx context.Context, id string) (*models.Eve
 	return e.eventRepo.GetByID(ctx, id)
 }
 
-func ProvideEventService(eventRepo repositories.EventRepositories, userRepo repositories.UserRepositories, config *configs.Config) EventUseCase {
+// UpdateStatusDateEvent implements EventUseCase.
+func (e *eventService) UpdateStatusEvent(ctx context.Context, req *requests.UpdateStatusEventRequest, id string) error {
+	return e.eventRepo.UpdateStatus(ctx, req, id)
+}
+
+func ProvideEventService(eventRepo repositories.EventRepositories, userRepo repositories.UserRepositories, config *configs.Config, mailer mailer.Mailer) EventUseCase {
 	return &eventService{
 		eventRepo: eventRepo,
 		userRepo:  userRepo,
 		config:    config,
+		mailer:   mailer,
 	}
 }
