@@ -1,0 +1,38 @@
+name: "Feature to Develop branch Pull Request"
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened]
+    branches: ["develop"]
+
+permissions:
+  contents: read
+
+jobs:
+  build-and-test:
+    name: "Build Fiber Application and Unit Testing"
+    runs-on: ubuntu-latest
+    steps:
+      - name: "Checkout Repository"
+        uses: actions/checkout@v4
+
+      - name: "Set Up Golang"
+        uses: actions/setup-go@v5
+        with:
+          go-version: ${{ secrets.GO_VERSION }}
+
+      - name: "Install Dependencies"
+        run: go mod tidy
+
+      - name: "Run Unit Test in Services"
+        run: go test -v -cover ./domain/usecases/
+
+  build-docker-file:
+    needs: build-and-test
+    runs-on: ubuntu-latest
+    steps:
+      - name: "Checkout Repository"
+        uses: actions/checkout@v4
+
+      - name: "Build Docker Image"
+        run: docker build -t 472-be-cicd -f docker/dev.Dockerfile .

@@ -1,0 +1,31 @@
+# Ignore the Go module cache
+/pkg
+/bin
+/build
+
+# Ignore Go dependencies
+#go.sum
+#go.mod
+
+# Ignore IDE/editor files
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# Ignore compiled binaries
+*.exe
+*.out
+*.o
+
+# Ignore logs and temp files
+*.log
+*.tmp
+*.cache
+.env
+
+# Ignore test files
+internal/rest/test/
+
+# Ignore Docker files
+docker-compose.override.yml
