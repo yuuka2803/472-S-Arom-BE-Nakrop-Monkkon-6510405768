@@ -25,7 +25,15 @@ func (d *diaryHandler) CreateDiary(c *fiber.Ctx) error {
 	if err := c.BodyParser(&req); err != nil {
 		return err
 	}
-	diary, err := d.service.CreateDiary(c.Context(), &req)
+	form, err := c.MultipartForm()
+	if err != nil {
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"error": "Failed to parse form data"})
+	}
+
+	files := form.File["images"]
+
+	req.UserID = form.Value["user_id"][0]
+	diary, err := d.service.CreateDiary(c.Context(), &req, files)
 	if err != nil {
 		return err
 	}
@@ -82,13 +90,21 @@ func (d *diaryHandler) GetDiaryByUserID(c *fiber.Ctx) error {
 // UpdateDiary implements DiaryHandler.
 func (d *diaryHandler) UpdateDiary(c *fiber.Ctx) error {
 	date := c.Params("date")
-	var req requests.CreateDiaryRequest
+	var req requests.UpdateDiaryRequest
 	if err := c.BodyParser(&req); err != nil {
 		return err
 	}
-	err := d.service.UpdateDiary(c.Context(), &req, date)
+	form, err := c.MultipartForm()
 	if err != nil {
-		return  err 
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"error": "Failed to parse form data"})
+	}
+	req.ImagesURL = form.Value["images_url"]
+	files := form.File["images"]
+
+	req.UserID = form.Value["user_id"][0]
+	errUpdate := d.service.UpdateDiary(c.Context(), &req, date, files)
+	if errUpdate != nil {
+		return errUpdate
 	}
 	return c.Status(fiber.StatusOK).JSON(fiber.Map{
 		"message": "Diary updated successfully",

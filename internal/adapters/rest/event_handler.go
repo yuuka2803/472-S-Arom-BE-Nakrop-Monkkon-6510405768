@@ -37,7 +37,7 @@ func (p *eventHandler) UpdateEvent(c *fiber.Ctx) error {
 	return c.Status(fiber.StatusOK).JSON(fiber.Map{
 		"message": "Event updated",
 	})
-	
+
 }
 
 // GetAllEvent implements EventHandler.

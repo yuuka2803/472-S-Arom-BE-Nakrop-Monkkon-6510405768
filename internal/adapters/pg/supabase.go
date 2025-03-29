@@ -1,14 +1,13 @@
-// internal/adapters/pg/supabase.go
 package pg
 
 import (
-    "bytes"
-    "fmt"
-    "io"
-    "mime/multipart"
-    "net/http"
+	"bytes"
+	"fmt"
+	"io"
+	"mime/multipart"
+	"net/http"
 
-    "github.com/kritpi/arom-web-services/configs"
+	"github.com/kritpi/arom-web-services/configs"
 )
 
 func UploadImageToSupabaseV2(file multipart.File, fileName, bucket string, config *configs.Config) (string, error) {

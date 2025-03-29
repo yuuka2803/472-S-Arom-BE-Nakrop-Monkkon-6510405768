@@ -1,20 +1,20 @@
 package pg
 
 import (
-	"context"
-	"log"
 	"bytes"
-  "fmt"
-  "io"
-  "mime/multipart"
-  "net/http"
+	"context"
+	"fmt"
+	"io"
+	"log"
+	"mime/multipart"
+	"net/http"
 
 	"github.com/google/uuid"
 	"github.com/jmoiron/sqlx"
+	"github.com/kritpi/arom-web-services/configs"
 	"github.com/kritpi/arom-web-services/domain/models"
 	"github.com/kritpi/arom-web-services/domain/repositories"
 	"github.com/kritpi/arom-web-services/domain/requests"
-	"github.com/kritpi/arom-web-services/configs"
 )
 
 type UserPGRepository struct {
